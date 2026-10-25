@@ -260,10 +260,16 @@ def agents_sdk_user_agent_override():
     chat_completions_token = chat_completions_headers_override.set({"User-Agent": ua})
     responses_token = responses_headers_override.set({"User-Agent": ua})
 
-    yield
-
-    chat_completions_headers_override.reset(chat_completions_token)
-    responses_headers_override.reset(responses_token)
+    try:
+        yield
+    finally:
+        try:
+            chat_completions_headers_override.reset(chat_completions_token)
+            responses_headers_override.reset(responses_token)
+        except ValueError:
+            # Async generators may be finalized in a different context, where
+            # these tokens cannot be reset.
+            pass
 
 
 class StreamingResult(AsyncIterable[bytes]):
